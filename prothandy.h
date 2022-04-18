@@ -29,8 +29,13 @@
 #define _set_icmpcheck(packet) (_icmphdr(packet)->checksum = \
     calculate_checksum(_icmphdr(packet), sizeof(struct icmphdr)))
 
+#define FINALIZE(socket, packet) \
+    close(socket), free(packet)
+
 #define CREATE_BUF(buf, size) \
     char buf[size]; memset(buf, 0, sizeof buf)
+
+#define PACKET_SIZE (sizeof(struct iphdr) + sizeof(struct icmphdr))
 
 uint32_t get_hostip();
 uint16_t calculate_checksum(void* hdr, uint32_t size);

@@ -86,6 +86,7 @@ void _make_default_icmphdr(struct icmphdr* header) {
     */
 
     memset(header, 0, sizeof(struct icmphdr));
-    header->type = 0;
+    header->type = 0x8;
+    header->code = 0x0;
     header->code = ICMP_ECHO;
 }

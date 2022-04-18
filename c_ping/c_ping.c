@@ -1,7 +1,5 @@
 #include "c_ping.h"
 
-#define PACKET_SIZE (sizeof(struct iphdr) + sizeof(struct icmphdr))
-
 void c_ping_to(struct c_ping_in in) {
     /*
         Sending icmp echo requests to destination
