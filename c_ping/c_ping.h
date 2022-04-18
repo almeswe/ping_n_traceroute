@@ -17,11 +17,11 @@
 
 struct c_ping_in {
     union {
-        uint32_t ip;
-        const char* domain;
+        uint32_t ip;        // destination ip address for pinging
+        const char* domain; // possible variant to pass domain instead of ip (not supported)
     };
-    uint8_t attempts;
-    uint32_t hostip;
+    uint8_t attempts;       // count of maximum sent packet in future
+    uint32_t hostip;        // host ip address from which pinging is performed
 };
 
 void c_ping_to(struct c_ping_in in);
@@ -29,4 +29,4 @@ void c_ping_print(struct iphdr* iphdr, struct icmphdr* icmphdr,
     int attempt, double elapsed);
 void c_ping_final_print(int sent, int received);
 
-#endif
+#endif // _CUSTOM_PING_H
