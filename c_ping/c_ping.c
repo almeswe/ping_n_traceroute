@@ -1,36 +1,34 @@
 #include "c_ping.h"
 
-void c_ping_to(struct c_ping_in in) {
+int c_ping_to(struct c_ping_in in) {
     /*
         Sending icmp echo requests to destination
         ip address, and processes retrieved replies.
     */
 
-    int sockfd;     // specifying SOCK_RAW to take control of ip header creation
+    int sockfd;         // specifying SOCK_RAW to take control of ip header creation
     if ((sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) < 0) {
-        return perror("Socket creation"), (void)1;
+        return perror("Socket creation"), 1;
     }
 
-    int optval = 1; // specifying IP_HDRINCL socket option, needed for charging kernel to not help us with building the ip header
-                    // we will build everything barebones
+    int optval = 1;     // specifying IP_HDRINCL socket option, needed for charging kernel to not help us with building the ip header
+                        // we will build everything barebones
     if (setsockopt(sockfd, IPPROTO_IP, IP_HDRINCL, &optval, sizeof(int)) < 0) {
-        return perror("Cannot set socket option"), (void)1;
+        return perror("Cannot set socket option"), 1;
     }
 
-    char* packet = xmalloc(PACKET_SIZE);        // allocating memory for packet, which contains ip and icmp headers
-    _make_default_iphdr(_iphdr(packet));        // making default skeleton of ip header
+    char* packet = xmalloc(PACKET_SIZE);                        // allocating memory for packet, which contains ip and icmp headers
+    _make_default_iphdr(_iphdr(packet));                        // making default skeleton of ip header
     _iphdr(packet)->daddr = in.ip;
     _iphdr(packet)->saddr = in.hostip;
     _iphdr(packet)->tot_len = PACKET_SIZE;
     _iphdr(packet)->protocol = IPPROTO_ICMP;
 
-    _make_default_icmphdr(_icmphdr(packet));    // making default skeleton of imcp echo request header
-    _icmphdr(packet)->type = 0x8;
-    _icmphdr(packet)->code = 0x0;
-    _icmphdr(packet)->un.echo.id = random();    // specifying random identifier for each c_ping execution
+    _make_default_icmphdr(_icmphdr(packet));                    // making default skeleton of imcp echo request header
+    _icmphdr(packet)->un.echo.id = random();                    // specifying random identifier for each c_ping execution
 
-    int received = 0;                           // count of received icmp echo replyes
-    struct sockaddr_in dest_addr_in = {         // target c_ping address (needed for sendto and recv functions)
+    int received = 0;                                           // count of received icmp echo replyes
+    struct sockaddr_in dest_addr_in = {                         // target c_ping address (needed for sendto and recv functions)
         .sin_family = AF_INET,
         .sin_addr.s_addr = _iphdr(packet)->daddr
     };
@@ -39,10 +37,9 @@ void c_ping_to(struct c_ping_in in) {
 
     for (int attempt = 1; attempt <= in.attempts; attempt++) {  // iterating through each attempt specified in c_ping_in
         _icmphdr(packet)->checksum = 0;                         // renew the checksum, because we need to calcuate it again each iteration
-        _icmphdr(packet)->un.echo.sequence = attempt;
+        _icmphdr(packet)->un.echo.sequence += 1;
         _set_icmpcheck(packet);
         _set_ipcheck(packet);
-        sleep(1);
         clock_t set_at = clock();
         sendto(sockfd, packet, PACKET_SIZE, 0, 
             dest_addr, sizeof dest_addr_in);                    // sending packet to destination. No need for error checking, 
@@ -56,7 +53,7 @@ void c_ping_to(struct c_ping_in in) {
             attempt, (double)(stop_at - set_at));
     }
     c_ping_final_print(in.attempts, received);
-    free(packet), close(sockfd);
+    return FINALIZE(sockfd, packet), 0;
 }
 
 void c_ping_print(struct iphdr* iphdr, struct icmphdr* icmphdr,
@@ -69,7 +66,7 @@ void c_ping_print(struct iphdr* iphdr, struct icmphdr* icmphdr,
     uint8_t type = icmphdr->type;
     uint8_t code = icmphdr->code;
 
-    if (type == 0) {
+    if (type == ICMP_ECHOREPLY) {
         char* ipaddrbuf = inet_ntoa(
             *((struct in_addr*)&iphdr->saddr));
         printf("%d bytes from %s", 

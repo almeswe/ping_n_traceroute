@@ -19,11 +19,11 @@
 #define MAX_VERIFY_ATTEMPTS 3
 
 struct c_traceroute_in {
-    uint32_t ip;
-    uint32_t hostip;
+    uint32_t ip;            // destination ip address for tracing
+    uint32_t hostip;        // host ip address from which tracing is performed
 };
 
-void c_traceroute_for(struct c_traceroute_in in);
+int c_traceroute_for(struct c_traceroute_in in);
 void c_traceroute_print(struct iphdr* iphdr, struct icmphdr* icmphdr);
 void c_traceroute_hop_print(double elapsed);
 void c_traceroute_welcome_print(uint32_t ipaddr, uint8_t max_ttl);
